@@ -2,6 +2,13 @@ import socket
 import sys
 import pyfiglet
 from datetime import datetime
+import os
+
+
+#os.system('cls')  # clear Shell
+os.system('clear')
+
+
 
 banner = pyfiglet.figlet_format("Folcoxx SCANNER")
 print(banner)
