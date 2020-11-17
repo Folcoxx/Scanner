@@ -10,7 +10,11 @@ print(banner)
 
 remoteServer = input("Enter a remote host or IP to scan: ")
 
-PortRange1, PortRange2 = input("Port range (1 1024): ").split()
+PortRange = input("Port range (1,1024): ")
+
+
+
+
 
 def ipv4addr(remoteServer):   # Check IPv4
     try:
@@ -42,8 +46,19 @@ else:   # else Inverse resolve
 dt = datetime.now() #Check Start time
 
 try:
-    if int(PortRange2) == 0:
-        port = int(PortRange1)
+    if PortRange.find(',') != -1:
+        PortRange1, PortRange2 = PortRange.split(",")
+        for port in range(int(PortRange1) , int(PortRange2)+1):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex((remoteServerIP, port))
+            if result == 0:
+                print("[+] Port {}:  Open".format(port))
+            #if result == 10060:
+            #    print("[+] Port {}:  closed".format(port))
+            #sock.close()
+
+    else:
+        port = int(PortRange)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex((remoteServerIP, port))
         if result == 0:
@@ -52,15 +67,6 @@ try:
             print("[+] Port {}:  closed".format(port))
         sock.close()
 
-    else:
-        for port in range(int(PortRange1) , int(PortRange2)):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex((remoteServerIP, port))
-            if result == 0:
-                print("[+] Port {}:  Open".format(port))
-            if result == 10060:
-                print("[+] Port {}:  closed".format(port))
-            sock.close()
 
 except KeyboardInterrupt:
     sys.exit()
