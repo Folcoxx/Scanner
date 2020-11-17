@@ -4,24 +4,17 @@ import pyfiglet
 from datetime import datetime
 import os
 
-
 #os.system('cls')  # clear Shell
 os.system('clear')
 
-
-
 banner = pyfiglet.figlet_format("Folcoxx SCANNER")
 print(banner)
-
-
 
 remoteServer = input("Enter a remote host or IP to scan: ")
 
 PortRange = input("Port range (1,1024): ")
 
-
-
-
+print("-" * 50)
 
 def ipv4addr(remoteServer):   # Check IPv4
     try:
@@ -43,41 +36,76 @@ def ipv6addr(remoteServer): #Check IPv6
     return True
 
 if (ipv4addr(remoteServer)==False) and (ipv6addr(remoteServer)==False): #If it's Name DNS resolve
-    remoteServerIP = socket.gethostbyname(remoteServer)
-    print("[+] Scanning", remoteServerIP)
+        remoteServerIP = socket.gethostbyname(remoteServer)
+        print("[+] Scanning", remoteServerIP)
 else:   # else Inverse resolve
     remoteServerIP = remoteServer
-    remoteHostname = socket.gethostbyaddr(remoteServerIP)
-    print("[+] Scanning", remoteHostname)
+    try:
+        remoteHostname = socket.gethostbyaddr(remoteServerIP)
+        print("[+] Scanning", remoteHostname)
+    except socket.error:
+        print("Pas de hostname")
 
 dt = datetime.now() #Check Start time
-
-try:
-    if PortRange.find(',') != -1:
-        PortRange1, PortRange2 = PortRange.split(",")
-        for port in range(int(PortRange1) , int(PortRange2)+1):
+if ipv4addr(remoteServerIP):
+    try:
+        if PortRange.find(',') != -1:
+            PortRange1, PortRange2 = PortRange.split(",")
+            for port in range(int(PortRange1), int(PortRange2) + 1):
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                result = sock.connect_ex((remoteServerIP, port))
+                if result == 0:
+                    print("[+] Port {}:  Open".format(port))
+                # if result == 10060:
+                #    print("[+] Port {}:  closed".format(port))
+                sock.close()
+        else:
+            port = int(PortRange)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             result = sock.connect_ex((remoteServerIP, port))
             if result == 0:
                 print("[+] Port {}:  Open".format(port))
-            #if result == 10060:
-            #    print("[+] Port {}:  closed".format(port))
-            #sock.close()
+            else:
+                print("[+] Port {}:  closed".format(port))
+            sock.close()
 
-    else:
-        port = int(PortRange)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((remoteServerIP, port))
-        if result == 0:
-            print("[+] Port {}:  Open".format(port))
-        if result == 10060:
-            print("[+] Port {}:  closed".format(port))
-        sock.close()
+    except KeyboardInterrupt:
+        sys.exit()
 
+    except socket.error:
+        print("No connect to serveur")
+        sys.exit()
+elif ipv6addr(remoteServerIP):
+    try:
+        if PortRange.find(',') != -1:
+            PortRange1, PortRange2 = PortRange.split(",")
+            for port in range(int(PortRange1), int(PortRange2) + 1):
+                sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+                result = sock.connect_ex((remoteServerIP, port))
+                if result == 0:
+                    print("[+] Port {}:  Open".format(port))
+                # if result == 10060:
+                #    print("[+] Port {}:  closed".format(port))
+                sock.close()
+        else:
+            port = int(PortRange)
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            result = sock.connect_ex((remoteServerIP, port))
+            if result == 0:
+                print("[+] Port {}:  Open".format(port))
+            if result == 10060:
+                print("[+] Port {}:  closed".format(port))
+            sock.close()
 
-except KeyboardInterrupt:
-    sys.exit()
+    except KeyboardInterrupt:
+        sys.exit()
 
-except socket.error:
-    print("No connect to serveur")
-    sys.exit()
+    except socket.error:
+        print("No connect to serveur")
+        sys.exit()
+
+fd = datetime.now()   #Check End Time
+
+Timett = fd - dt
+print("-" * 50)
+print("Total Time of Scan", Timett)
