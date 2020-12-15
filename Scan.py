@@ -3,18 +3,17 @@ import sys
 import pyfiglet
 from datetime import datetime
 import os
+import threading
+from queue import Queue
 
 #os.system('cls')  # clear Shell
 os.system('clear')
-
 banner = pyfiglet.figlet_format("Folcoxx SCANNER")
 print(banner)
-
 remoteServer = input("Enter a remote host or IP to scan: ")
-
 PortRange = input("Port range (1,1024): ")
-
 print("-" * 50)
+print_lock = threading.Lock()
 
 def ipv4addr(remoteServer):   # Check IPv4
     try:
@@ -47,65 +46,60 @@ else:   # else Inverse resolve
         print("Pas de hostname")
 
 dt = datetime.now() #Check Start time
-if ipv4addr(remoteServerIP):
-    try:
-        if PortRange.find(',') != -1:
-            PortRange1, PortRange2 = PortRange.split(",")
-            for port in range(int(PortRange1), int(PortRange2) + 1):
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                result = sock.connect_ex((remoteServerIP, port))
-                if result == 0:
-                    print("[+] Port {}:  Open".format(port))
-                # if result == 10060:
-                #    print("[+] Port {}:  closed".format(port))
-                sock.close()
-        else:
-            port = int(PortRange)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex((remoteServerIP, port))
-            if result == 0:
-                print("[+] Port {}:  Open".format(port))
-            else:
-                print("[+] Port {}:  closed".format(port))
-            sock.close()
 
+def scan4(port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        con = sock.connect((remoteServerIP, port))
+        with print_lock:
+            print("[+] Port",str(port),":  Open")
+        con.close()
     except KeyboardInterrupt:
         sys.exit()
+    except:
+        pass
 
-    except socket.error:
-        print("No connect to serveur")
-        sys.exit()
-elif ipv6addr(remoteServerIP):
+def scan6(port):
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     try:
-        if PortRange.find(',') != -1:
-            PortRange1, PortRange2 = PortRange.split(",")
-            for port in range(int(PortRange1), int(PortRange2) + 1):
-                sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-                result = sock.connect_ex((remoteServerIP, port))
-                if result == 0:
-                    print("[+] Port {}:  Open".format(port))
-                # if result == 10060:
-                #    print("[+] Port {}:  closed".format(port))
-                sock.close()
-        else:
-            port = int(PortRange)
-            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            result = sock.connect_ex((remoteServerIP, port))
-            if result == 0:
-                print("[+] Port {}:  Open".format(port))
-            if result == 10060:
-                print("[+] Port {}:  closed".format(port))
-            sock.close()
-
+        con = sock.connect((remoteServerIP, port))
+        with print_lock:
+            print("[+] Port",str(port),":  Open")
+        con.close()
     except KeyboardInterrupt:
         sys.exit()
+    except:
+        pass
 
-    except socket.error:
-        print("No connect to serveur")
-        sys.exit()
+def threader():
+    while True:
+        if ipv4addr(remoteServerIP):
+            jobs = q.get()
+            scan4(jobs)
+            q.task_done()
+        elif ipv6addr(remoteServerIP):
+            jobs = q.get()
+            scan6(jobs)
+            q.task_done()
+
+q = Queue()
+
+for x in range(100):
+    t = threading.Thread(target=threader)
+    t.daemon = True
+    t.start()
+
+if PortRange.find(',') != -1:
+    PortRange1, PortRange2 = PortRange.split(",")
+    for jobs in range(int(PortRange1), int(PortRange2) + 1):
+        q.put(jobs)
+    q.join()
+else:
+    port = int(PortRange)
+    q.put(port)
+    q.join()
 
 fd = datetime.now()   #Check End Time
-
 Timett = fd - dt
 print("-" * 50)
 print("Total Time of Scan", Timett)
